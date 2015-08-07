@@ -1,7 +1,7 @@
 # Falcon JSON IO
 
 Validate HTTP request and response body by defining acceptable values with JSON
-schema.
+schema.  For use with the [Falcon web framework](http://falconframework.org/).
 
 Define your request body schema, and your endpoint is only called if the
 request matches your specification.  Otherwise, an error is returned to the
