@@ -2,7 +2,7 @@ from setuptools import setup
 from pip.req import parse_requirements
 
 setup(name='falconjsonio',
-      version='0.1',
+      version='0.1.1',
       description='JSON-Schema input and output for Falcon',
       long_description='Declare the input requirements and output specifications of your API using JSON-Schema.',
       url='https://bitbucket.org/garymonson/falcon-json-io',
