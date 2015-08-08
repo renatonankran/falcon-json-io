@@ -1,10 +1,18 @@
 from setuptools import setup
 from pip.req import parse_requirements
 
+version = '0.1.2'
+
+try:
+    import pypandoc
+    long_description = pypandoc.convert('README.md', 'rst')
+except (IOError, ImportError):
+    long_description = open('README.md').read()
+
 setup(name='falconjsonio',
-      version='0.1.1',
+      version=version,
       description='JSON-Schema input and output for Falcon',
-      long_description='Declare the input requirements and output specifications of your API using JSON-Schema.',
+      long_description=long_description,
       url='https://bitbucket.org/garymonson/falcon-json-io',
       author='Gary Monson',
       author_email='gary.monson@gmail.com',

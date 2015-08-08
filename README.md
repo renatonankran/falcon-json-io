@@ -87,9 +87,10 @@ app.add_route('/people', People())
 
 ## Quick start for contributing
 
-    virtualenv -p `which python3` virtualenv
-    source virtualenv/bin/activate
-    pip install -r requirements.txt
-    pip install -r dev_requirements.txt
-    nosetests
-
+```
+virtualenv -p `which python3` virtualenv
+source virtualenv/bin/activate
+pip install -r requirements.txt
+pip install -r dev_requirements.txt
+nosetests
+```
