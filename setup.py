@@ -1,5 +1,6 @@
 from setuptools import setup
 from pip.req import parse_requirements
+from pip.download import PipSession
 
 version = '0.1.2'
 
@@ -28,5 +29,5 @@ setup(name='falconjsonio',
       ],
       keywords='json schema falcon',
       packages=['falconjsonio'],
-      install_requires=[str(ir.req) for ir in parse_requirements('requirements.txt')],
+      install_requires=[str(ir.req) for ir in parse_requirements('requirements.txt', session=PipSession())],
       zip_safe=False)
