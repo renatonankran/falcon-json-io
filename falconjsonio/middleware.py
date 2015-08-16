@@ -54,7 +54,7 @@ class JSONTranslator(object):
         resp.body = json.dumps(req.context['result'])
 
         schema = getattr(
-            getattr(resource, {'POST': 'on_post', 'PUT': 'on_put'}[req.method]),
+                getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'GET': 'on_get', 'DELETE': 'on_delete'}[req.method]),
             '__response_schema__',
             None
         )
