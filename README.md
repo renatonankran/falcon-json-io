@@ -13,7 +13,7 @@ return a 500 error instead.
 
 Retrieve your request JSON using req.context['doc'].
 
-Set your JSON response in resp.context['result'].
+Set your JSON response in req.context['result'].
 
 ## Using the middleware
 
@@ -68,15 +68,15 @@ class People(object):
     @response_schema(people_get_response_schema)
     def on_get(self, req, resp):
         # Put your JSON response here:
-        resp.context['result'] = {'some': 'json'}
+        req.context['result'] = {'some': 'json'}
 
     @request_schema(people_post_request_schema)
     @response_schema(people_post_response_schema)
     def on_post(self, req, resp):
         # JSON request supplied here:
-        form = resp.context['doc']
+        form = req.context['doc']
         # Put your JSON response here:
-        resp.context['result'] = {'some': 'json'}
+        req.context['result'] = {'some': 'json'}
 ```
 
 Hook the endpoint in, of course:
