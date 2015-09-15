@@ -32,9 +32,9 @@ class JSONTranslator(object):
             )
 
     def process_resource(self, req, resp, resource):
-        if resource is not None and req.method in ['POST', 'PUT']:
+        if resource is not None and req.method in ['POST', 'PUT', 'PATCH']:
             schema = getattr(
-                getattr(resource, {'POST': 'on_post', 'PUT': 'on_put'}[req.method]),
+                getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method]),
                 '__request_schema__',
                 None
             )
@@ -54,7 +54,7 @@ class JSONTranslator(object):
         resp.body = json.dumps(req.context['result'])
 
         schema = getattr(
-                getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'GET': 'on_get', 'DELETE': 'on_delete'}[req.method]),
+            getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch', 'GET': 'on_get', 'DELETE': 'on_delete'}[req.method]),
             '__response_schema__',
             None
         )
