@@ -1,7 +1,12 @@
 import falcon
 import json
 import jsonschema
+import logging
 
+
+class _null_handler(logging.Handler):
+    def emit(self, record):
+        pass
 
 class RequireJSON(object):
     def process_request(self, req, resp):
@@ -12,6 +17,13 @@ class RequireJSON(object):
                 raise falcon.HTTPUnsupportedMediaType('This API supports only JSON-encoded requests')
 
 class JSONTranslator(object):
+    def __init__(self, logger=None):
+        if logger is None:
+            # Default to no logging if no logger provided
+            logger = logging.getLogger(__name__)
+            logger.addHandler(_null_handler())
+        self.logger = logger
+
     def process_request(self, req, resp):
         if req.content_length in (None, 0):
             return
@@ -53,17 +65,21 @@ class JSONTranslator(object):
 
         resp.body = json.dumps(req.context['result'])
 
+        try:
+            method_name = {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch', 'GET': 'on_get', 'DELETE': 'on_delete'}[req.method]
+        except KeyError:
+            return
+
         schema = getattr(
-            getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch', 'GET': 'on_get', 'DELETE': 'on_delete'}[req.method]),
+            getattr(resource, method_name),
             '__response_schema__',
             None
         )
-        if schema is not None:
-            try:
-                jsonschema.validate(req.context['result'], schema)
-            except jsonschema.exceptions.ValidationError as error:
-                # TODO Log this so API developer can fix it
-                raise falcon.HTTPInternalServerError(
-                    'Invalid response body',
-                    json.dumps({'error': str(error)})
-                )
+        if schema is None:
+            return
+
+        try:
+            jsonschema.validate(req.context['result'], schema)
+        except jsonschema.exceptions.ValidationError as error:
+            self.logger.error('Blocking proposed response from being sent from {0}.{1}.{2} to client as it does not match the defined schema: {3}'.format(resource.__module__, resource.__class__.__name__, method_name, str(error)))
+            raise falcon.HTTPInternalServerError('Internal Server Error', 'Undisclosed')

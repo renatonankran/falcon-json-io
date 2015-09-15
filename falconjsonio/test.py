@@ -2,6 +2,7 @@ import falconjsonio.middleware, falconjsonio.schema
 
 import falcon, falcon.testing
 import json
+import logging
 import unittest
 
 
@@ -75,14 +76,26 @@ class BadResource(object):
         resp.status = falcon.HTTP_200
         req.context['result'] = {'this': 'does not conform'}
 
+class CollectingHandler(logging.Handler):
+    def __init__(self):
+        super(CollectingHandler, self).__init__()
+        self.logs = []
+    def emit(self, record):
+        self.logs.append(record)
+
 class IOTest(unittest.TestCase):
     def setUp(self):
         super(IOTest, self).setUp()
 
+        self.logger = logging.getLogger('TestLogger')
+        self.handler = CollectingHandler()
+        self.logger.handlers = []
+        self.logger.addHandler(self.handler)
+
         self.app = falcon.API(
             middleware=[
                 falconjsonio.middleware.RequireJSON(),
-                falconjsonio.middleware.JSONTranslator(),
+                falconjsonio.middleware.JSONTranslator(self.logger),
             ],
         )
 
@@ -128,6 +141,21 @@ class IOTest(unittest.TestCase):
         self.assertEqual((json.loads(response[0].decode('utf-8')))['title'], 'Invalid request body')
 
     def test_nonconforming_post_response(self):
-        response = self.simulate_request('/bad_response', method='POST', body=json.dumps({'email': 'foo@example.com', 'password': 'hunter2'}), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+        response, = self.simulate_request('/bad_response', method='POST', body=json.dumps({'email': 'foo@example.com', 'password': 'hunter2'}), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
         self.assertEqual(self.bad_resource.received, {'email': 'foo@example.com', 'password': 'hunter2'})
         self.assertEqual(self.srmock.status, '500 Internal Server Error')
+        # Programming error is logged
+        self.assertEqual(
+            [self.handler.logs[0].message],
+            ["""Blocking proposed response from being sent from falconjsonio.test.BadResource.on_post to client as it does not match the defined schema: 'email' is a required property
+
+Failed validating 'required' in schema:
+    {'properties': {'email': {'type': 'string'}},
+     'required': ['email'],
+     'type': 'object'}
+
+On instance:
+    {'this': 'does not conform'}"""]
+        )
+
+        self.assertEqual(json.loads(response.decode('utf-8')), {'title': 'Internal Server Error', 'description': 'Undisclosed'})
