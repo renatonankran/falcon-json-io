@@ -85,6 +85,32 @@ Hook the endpoint in, of course:
 app.add_route('/people', People())
 ```
 
+If your methods are inherited from a parent class, you can apply the decorator
+to the resource class instead, and pass the method name to the decorator:
+
+```
+class People(object):
+    def on_get(self, req, resp):
+        # Put your JSON response here:
+        req.context['result'] = {'some': 'json'}
+
+    def on_post(self, req, resp):
+        # JSON request supplied here:
+        form = req.context['doc']
+        # Put your JSON response here:
+        req.context['result'] = {'some': 'json'}
+
+@response_schema(schema=people_get_response_schema, method_name='on_get')
+@request_schema(schema=people_post_request_schema, method_name='on_post')
+@response_schema(schema=people_post_response_schema, method_name='on_post')
+class ChildPeople(People):
+    pass
+```
+
+This is especially useful when you have a parent class with all the smarts, and
+your child classes merely declare a few settings for the parent class (e.g.
+[falcon-autocrud](https://pypi.python.org/pypi/falcon-autocrud))
+
 ## Quick start for contributing
 
 ```

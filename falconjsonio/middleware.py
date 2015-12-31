@@ -45,10 +45,14 @@ class JSONTranslator(object):
 
     def process_resource(self, req, resp, resource):
         if resource is not None and req.method in ['POST', 'PUT', 'PATCH']:
+            # First try to get schema from method itself
             schema = getattr(
                 getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method]),
                 '__request_schema__',
                 None
+            # Otherwise, fall back to schema defined directly in class
+            ) or getattr(resource, '__request_schemas__', {}).get(
+                {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method]
             )
             if schema is not None:
                 try:
@@ -70,11 +74,14 @@ class JSONTranslator(object):
         except KeyError:
             return
 
+        # First try to get schema from method itself
         schema = getattr(
             getattr(resource, method_name),
             '__response_schema__',
             None
-        )
+        # Otherwise, fall back to schema defined directly in class
+        ) or getattr(resource, '__response_schemas__', {}).get(method_name)
+
         if schema is None:
             return
 
