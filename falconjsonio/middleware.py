@@ -55,6 +55,11 @@ class JSONTranslator(object):
                 {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method]
             )
             if schema is not None:
+                if 'doc' not in req.context:
+                    raise falcon.HTTPBadRequest(
+                        'Empty request body',
+                        'A valid JSON document is required'
+                    )
                 try:
                     jsonschema.validate(req.context['doc'], schema)
                 except jsonschema.exceptions.ValidationError as error:

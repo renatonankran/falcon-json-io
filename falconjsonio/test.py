@@ -189,6 +189,10 @@ class IOTest(unittest.TestCase):
         self.assertEqual(self.srmock.status, '201 Created')
         self.assertEqual(json.loads(response[0].decode('utf-8')), {'email': 'foo@example.com'})
 
+    def test_empty_post(self):
+        response = self.simulate_request('/good_response', method='POST', headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(self.srmock.status, '400 Bad Request')
+
     def test_nonconforming_post_request(self):
         response = self.simulate_request('/good_response', method='POST', body=json.dumps({'email': 'foo@example.com'}), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
         self.assertEqual(self.good_resource.received, None)
