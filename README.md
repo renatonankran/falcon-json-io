@@ -3,6 +3,12 @@
 Validate HTTP request and response body by defining acceptable values with JSON
 schema.  For use with the [Falcon web framework](http://falconframework.org/).
 
+## Test status
+
+[ ![Codeship Status for garymonson/falcon-json-io](https://codeship.com/projects/c370db70-b520-0133-3191-1af10c27659b/status?branch=master)](https://codeship.com/projects/134051)
+
+## Usage overview
+
 Define your request body schema, and your endpoint is only called if the
 request matches your specification.  Otherwise, an error is returned to the
 caller.
