@@ -8,7 +8,7 @@ def _get_request_schema(req, resource):
     if resource is not None and req.method in ['POST', 'PUT', 'PATCH']:
         # First try to get schema from method itself
         schema = getattr(
-            getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method]),
+            getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method], None),
             '__request_schema__',
             None
         # Otherwise, fall back to schema defined directly in class
@@ -25,7 +25,7 @@ def _get_response_schema(resource, req):
 
     # First try to get schema from method itself
     return getattr(
-        getattr(resource, method_name),
+        getattr(resource, method_name, None),
         '__response_schema__',
         None
     # Otherwise, fall back to schema defined directly in class

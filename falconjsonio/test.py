@@ -207,6 +207,10 @@ class IOTest(unittest.TestCase):
         self.assertEqual(self.srmock.status, '201 Created')
         self.assertEqual(json.loads(response[0].decode('utf-8')), {'email': 'foo@example.com'})
 
+    def test_nonexistent_method(self):
+        response = self.simulate_request('/good_response', method='PUT', body=json.dumps({'email': 'foo@example.com', 'password': 'hunter2'}), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(self.srmock.status, '405 Method Not Allowed')
+
     def test_empty_post(self):
         response = self.simulate_request('/good_response', method='POST', headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
         self.assertEqual(self.srmock.status, '400 Bad Request')
