@@ -2,7 +2,7 @@ from setuptools import setup
 from pip.req import parse_requirements
 from pip.download import PipSession
 
-version = '0.1.8'
+version = '0.1.9'
 
 try:
     import pypandoc
