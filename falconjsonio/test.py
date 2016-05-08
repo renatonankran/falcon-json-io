@@ -11,7 +11,7 @@ class NonJSONResource(object):
         self.received = None
 
     def on_post(self, req, resp):
-        self.received   = req.stream.read()
+        self.received   = req.context['doc']
         resp.status     = falcon.HTTP_201
         resp.body       = self.received
         resp.set_header('Content-Type', req.content_type)
@@ -195,7 +195,7 @@ class IOTest(unittest.TestCase):
         response = self.simulate_request('/good_response', method='POST', body=json.dumps({}), headers={'Accept': 'application/json', 'Content-Type': 'text/html'})
         self.assertEqual(self.srmock.status, '415 Unsupported Media Type')
 
-    def test_on_json_endpoint(self):
+    def test_non_json_endpoint(self):
         response = self.simulate_request('/non_json_response', method='POST', body='Hello this is some text', headers={'Accept': 'text/plain', 'Content-Type': 'text/plain'})
         self.assertEqual(self.srmock.status, '201 Created')
         self.assertEqual(response[0].decode('utf-8'), 'Hello this is some text')

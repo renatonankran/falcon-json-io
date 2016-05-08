@@ -5,17 +5,19 @@ import logging
 
 
 def _get_request_schema(req, resource):
-    if resource is not None and req.method in ['POST', 'PUT', 'PATCH']:
-        # First try to get schema from method itself
-        schema = getattr(
-            getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method], None),
-            '__request_schema__',
-            None
-        # Otherwise, fall back to schema defined directly in class
-        ) or getattr(resource, '__request_schemas__', {}).get(
-            {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method]
-        )
-        return schema
+    if resource is None or req.method not in ['POST', 'PUT', 'PATCH']:
+        return None
+
+    # First try to get schema from method itself
+    schema = getattr(
+        getattr(resource, {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method], None),
+        '__request_schema__',
+        None
+    # Otherwise, fall back to schema defined directly in class
+    ) or getattr(resource, '__request_schemas__', {}).get(
+        {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch'}[req.method]
+    )
+    return schema
 
 def _get_response_schema(resource, req):
     try:
@@ -54,31 +56,35 @@ class JSONTranslator(object):
         self.logger = logger
 
     def process_resource(self, req, resp, resource):
-        if resource is not None and req.method in ['POST', 'PUT', 'PATCH']:
-            schema = _get_request_schema(req, resource)
+        if resource is None or req.method not in ['POST', 'PUT', 'PATCH']:
+            return
+
+        body = req.stream.read()
+        if not body:
+            raise falcon.HTTPBadRequest(
+                'Empty request body',
+                'A valid JSON document is required'
+            )
+
+        schema = _get_request_schema(req, resource)
+        try:
+            req.context['doc'] = json.loads(body.decode('utf-8'))
+        except (ValueError, UnicodeDecodeError) as error:
             if schema is not None:
-                body = req.stream.read()
-                if not body:
-                    raise falcon.HTTPBadRequest(
-                        'Empty request body',
-                        'A valid JSON document is required'
-                    )
+                raise falcon.HTTPBadRequest(
+                    'Malformed JSON',
+                    'Could not decode the request body.  The JSON was incorrect or not encoded as UTF-8'
+                )
+            req.context['doc'] = body
 
-                try:
-                    req.context['doc'] = json.loads(body.decode('utf-8'))
-                except (ValueError, UnicodeDecodeError) as error:
-                    raise falcon.HTTPBadRequest(
-                        'Malformed JSON',
-                        'Could not decode the request body.  The JSON was incorrect or not encoded as UTF-8'
-                    )
-
-                try:
-                    jsonschema.validate(req.context['doc'], schema)
-                except jsonschema.exceptions.ValidationError as error:
-                    raise falcon.HTTPBadRequest(
-                        'Invalid request body',
-                        json.dumps({'error': str(error)})
-                    )
+        if schema is not None:
+            try:
+                jsonschema.validate(req.context['doc'], schema)
+            except jsonschema.exceptions.ValidationError as error:
+                raise falcon.HTTPBadRequest(
+                    'Invalid request body',
+                    json.dumps({'error': str(error)})
+                )
 
     def process_response(self, req, resp, resource):
         if 'result' not in req.context:
