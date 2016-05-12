@@ -2,7 +2,7 @@ from setuptools import setup
 from pip.req import parse_requirements
 from pip.download import PipSession
 
-version = '0.1.11'
+version = '1.0.0'
 
 try:
     import pypandoc
@@ -19,7 +19,7 @@ setup(name='falconjsonio',
       author_email='gary.monson@gmail.com',
       license='MIT',
       classifiers=[
-          'Development Status :: 3 - Alpha',
+          'Development Status :: 3 - Beta',
           'Intended Audience :: Developers',
           'Topic :: Internet :: WWW/HTTP :: WSGI :: Middleware',
           'Topic :: Software Development :: Libraries :: Python Modules',
