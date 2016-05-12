@@ -59,32 +59,33 @@ class JSONTranslator(object):
         if resource is None or req.method not in ['POST', 'PUT', 'PATCH']:
             return
 
-        body = req.stream.read()
-        if not body:
-            raise falcon.HTTPBadRequest(
-                'Empty request body',
-                'A valid JSON document is required'
-            )
-
-        schema = _get_request_schema(req, resource)
-        try:
-            req.context['doc'] = json.loads(body.decode('utf-8'))
-        except (ValueError, UnicodeDecodeError) as error:
-            if schema is not None:
+        if 'application/json' in req.content_type:
+            body = req.stream.read()
+            if not body:
                 raise falcon.HTTPBadRequest(
-                    'Malformed JSON',
-                    'Could not decode the request body.  The JSON was incorrect or not encoded as UTF-8'
+                    'Empty request body',
+                    'A valid JSON document is required'
                 )
-            req.context['doc'] = body
 
-        if schema is not None:
+            schema = _get_request_schema(req, resource)
             try:
-                jsonschema.validate(req.context['doc'], schema)
-            except jsonschema.exceptions.ValidationError as error:
-                raise falcon.HTTPBadRequest(
-                    'Invalid request body',
-                    json.dumps({'error': str(error)})
-                )
+                req.context['doc'] = json.loads(body.decode('utf-8'))
+            except (ValueError, UnicodeDecodeError) as error:
+                if schema is not None:
+                    raise falcon.HTTPBadRequest(
+                        'Malformed JSON',
+                        'Could not decode the request body.  The JSON was incorrect or not encoded as UTF-8'
+                    )
+                req.context['doc'] = body
+
+            if schema is not None:
+                try:
+                    jsonschema.validate(req.context['doc'], schema)
+                except jsonschema.exceptions.ValidationError as error:
+                    raise falcon.HTTPBadRequest(
+                        'Invalid request body',
+                        json.dumps({'error': str(error)})
+                    )
 
     def process_response(self, req, resp, resource):
         if 'result' not in req.context:
