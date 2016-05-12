@@ -39,7 +39,7 @@ class _null_handler(logging.Handler):
         pass
 
 class RequireJSON(object):
-    def process_resource(self, req, resp, resource):
+    def process_resource(self, req, resp, resource, params):
         if _get_response_schema(resource, req) and not req.client_accepts_json:
             raise falcon.HTTPNotAcceptable('This API supports only JSON-encoded responses')
         if req.method in ('POST', 'PUT', 'PATCH'):
@@ -55,7 +55,7 @@ class JSONTranslator(object):
             logger.addHandler(_null_handler())
         self.logger = logger
 
-    def process_resource(self, req, resp, resource):
+    def process_resource(self, req, resp, resource, params):
         if resource is None or req.method not in ['POST', 'PUT', 'PATCH']:
             return
 
