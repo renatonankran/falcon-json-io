@@ -2,6 +2,7 @@ import falconjsonio.middleware, falconjsonio.schema
 
 import falcon, falcon.testing
 import json
+import jsonschema
 import logging
 import unittest
 
@@ -154,6 +155,33 @@ class CollectingHandler(logging.Handler):
     def emit(self, record):
         self.logs.append(record)
 
+format_checker = jsonschema.FormatChecker()
+
+@format_checker.checks('allcaps', raises=ValueError)
+def custom_format_validation(instance):
+    return instance.isupper()
+
+class StringFormatResource(object):
+
+    @falconjsonio.schema.request_schema({
+        'type': 'object',
+        'properties': {
+            'hostname':  {'format': 'hostname'},
+            'ipv4':      {'format': 'ipv4'},
+            'ipv6':      {'format': 'ipv6'},
+            'email':     {'format': 'email'},
+            'uri':       {'format': 'uri'},
+            'date-time': {'format': 'date-time'},
+            'date':      {'format': 'date'},
+            'time':      {'format': 'time'},
+            'regex':     {'format': 'regex'},
+            'color':     {'format': 'color'},
+            'allcaps':   {'format': 'allcaps'},
+        }
+    }, validator_kwargs=dict(format_checker=format_checker))
+    def on_post(self, req, resp):
+        resp.status = falcon.HTTP_201
+
 class IOTest(unittest.TestCase):
     def setUp(self):
         super(IOTest, self).setUp()
@@ -176,12 +204,14 @@ class IOTest(unittest.TestCase):
         self.bad_resource               = BadResource()
         self.good_child_resource        = GoodChildResource()
         self.bad_child_resource         = BadChildResource()
+        self.string_format_resource     = StringFormatResource()
         self.app.add_route('/non_json_response',        self.non_json_resource)
         self.app.add_route('/schemaless_json_response', self.schemaless_json_resource)
         self.app.add_route('/good_response',            self.good_resource)
         self.app.add_route('/bad_response',             self.bad_resource)
         self.app.add_route('/good_child_response',      self.good_child_resource)
         self.app.add_route('/bad_child_response',       self.bad_child_resource)
+        self.app.add_route('/string_format_response',   self.string_format_resource)
 
         self.srmock = falcon.testing.StartResponseMock()
 
@@ -319,3 +349,41 @@ On instance:
             @falconjsonio.schema.response_schema({})
             class Foo(object):
                 pass
+
+    def test_conforming_string_formats(self):
+        response = self.simulate_request('/string_format_response', method='POST', body=json.dumps(
+            {
+                'hostname': 'A.X.COM',
+                'ipv4': '129.144.52.38',
+                'ipv6': '::FFFF:129.144.52.38',
+                'email': 'user@example.com',
+                'uri': 'http://www.ietf.org/rfc/rfc2396.txt',
+                'date-time': '2017-05-31T07:08:58Z',
+                'date': '2017-05-31',
+                'time': '07:03:33',
+                'regex': r'\d+\.\d*',
+                'color': '#daa520',
+                'allcaps': 'ALLCAPS',
+            }
+        ), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(self.srmock.status, '201 Created', response)
+
+    def test_non_conforming_string_format_builtin(self):
+        self.simulate_request('/string_format_response', method='POST', body=json.dumps({'hostname': 'not a hostname'}), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(self.srmock.status, '400 Bad Request')
+
+    def test_non_conforming_string_format_installed_rfc3987(self):
+        self.simulate_request('/string_format_response', method='POST', body=json.dumps({'uri': 'not a uri'}), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(self.srmock.status, '400 Bad Request')
+
+    def test_non_conforming_string_format_installed_strict_rfc3339(self):
+        self.simulate_request('/string_format_response', method='POST', body=json.dumps({'date-time': 'not a date-time'}), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(self.srmock.status, '400 Bad Request')
+
+    def test_non_conforming_string_format_installed_webcolors(self):
+        self.simulate_request('/string_format_response', method='POST', body=json.dumps({'color': 'not a color'}), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(self.srmock.status, '400 Bad Request')
+
+    def test_non_conforming_string_format_custom(self):
+        self.simulate_request('/string_format_response', method='POST', body=json.dumps({'allcaps': 'not allcaps'}), headers={'Accept': 'application/json', 'Content-Type': 'application/json'})
+        self.assertEqual(self.srmock.status, '400 Bad Request')

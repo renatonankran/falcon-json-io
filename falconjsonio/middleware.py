@@ -80,7 +80,7 @@ class JSONTranslator(object):
 
             if schema is not None:
                 try:
-                    jsonschema.validate(req.context['doc'], schema)
+                    schema.validate(req.context['doc'])
                 except jsonschema.exceptions.ValidationError as error:
                     raise falcon.HTTPBadRequest(
                         'Invalid request body',
@@ -98,7 +98,7 @@ class JSONTranslator(object):
             return
 
         try:
-            jsonschema.validate(req.context['result'], schema)
+            schema.validate(req.context['result'])
         except jsonschema.exceptions.ValidationError as error:
             method_name = {'POST': 'on_post', 'PUT': 'on_put', 'PATCH': 'on_patch', 'GET': 'on_get', 'DELETE': 'on_delete'}[req.method]
             self.logger.error('Blocking proposed response from being sent from {0}.{1}.{2} to client as it does not match the defined schema: {3}'.format(resource.__module__, resource.__class__.__name__, method_name, str(error)))
