@@ -7,6 +7,8 @@ schema.  For use with the [Falcon web framework](http://falconframework.org/).
 
 [ ![Codeship Status for garymonson/falcon-json-io](https://codeship.com/projects/c370db70-b520-0133-3191-1af10c27659b/status?branch=master)](https://codeship.com/projects/134051)
 
+ModuleNotFoundError: No module named 'pip.req' corrected.
+
 ## Usage overview
 
 Define your request body schema, and your endpoint is only called if the
